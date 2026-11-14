@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "command": "node .github/hooks/security-guard.cjs",
+        "timeoutSec": 5
+      },
+      {
+        "type": "command",
+        "command": "node .github/hooks/workflow-approval-guard.cjs",
+        "timeoutSec": 5
+      }
+    ],
+    "agentStop": [
+      {
+        "type": "command",
+        "command": "node .github/hooks/verification-guard.cjs",
+        "timeoutSec": 5
+      }
+    ]
+  }
+}
