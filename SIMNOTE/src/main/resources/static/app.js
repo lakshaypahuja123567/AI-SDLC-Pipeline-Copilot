@@ -6,28 +6,6 @@ const ERRORS = {
     409: 'Username already taken.',
 };
 
-function csrfToken() {
-    const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
-    return match ? decodeURIComponent(match[1]) : '';
-}
-
-async function api(method, url, body) {
-    const options = { method, headers: { 'X-XSRF-TOKEN': csrfToken() } };
-    if (body !== undefined) {
-        options.headers['Content-Type'] = 'application/json';
-        options.body = JSON.stringify(body);
-    }
-    const response = await fetch(url, options);
-    const text = response.status === 204 ? '' : await response.text();
-    let data = null;
-    try {
-        data = text ? JSON.parse(text) : null;
-    } catch (e) {
-        data = null;
-    }
-    return { ok: response.ok, status: response.status, data };
-}
-
 function message(text) {
     $('message').textContent = text;
 }

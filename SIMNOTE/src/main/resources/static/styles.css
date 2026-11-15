@@ -198,3 +198,35 @@ a {
     color: var(--danger);
     font-size: 0.9rem;
 }
+
+@media (max-width: 480px) {
+    body {
+        padding: 0.75rem 0.5rem;
+    }
+
+    main {
+        padding: 1rem;
+    }
+
+    .site-header {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .actions button,
+    .actions a {
+        flex: 1 1 auto;
+        text-align: center;
+    }
+}
+
+@media (min-width: 900px) {
+    main,
+    .site-header {
+        max-width: 860px;
+    }
+
+    #notes {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
