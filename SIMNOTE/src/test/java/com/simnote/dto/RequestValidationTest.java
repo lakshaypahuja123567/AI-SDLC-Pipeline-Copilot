@@ -43,6 +43,18 @@ class RequestValidationTest {
     }
 
     @Test
+    void titleLengthBoundary() {
+        assertThat(validator.validate(new NoteRequest("a".repeat(255), null))).isEmpty();
+        assertThat(validator.validate(new NoteRequest("a".repeat(256), null))).isNotEmpty();
+    }
+
+    @Test
+    void contentLengthBoundary() {
+        assertThat(validator.validate(new NoteRequest("x", "a".repeat(10000)))).isEmpty();
+        assertThat(validator.validate(new NoteRequest("x", "a".repeat(10001)))).isNotEmpty();
+    }
+
+    @Test
     void usernameBoundariesAfterTrim() {
         assertThat(validator.validate(new RegisterRequest("ab", "abcdef12"))).isNotEmpty();
         assertThat(validator.validate(new RegisterRequest(" abc ", "abcdef12"))).isEmpty();

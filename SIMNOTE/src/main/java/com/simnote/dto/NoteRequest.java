@@ -1,4 +1,6 @@
 package com.simnote.dto;
 
-public record NoteRequest(@TrimmedSize String title, String content) {
+import jakarta.validation.constraints.Size;
+
+public record NoteRequest(@TrimmedSize(max = 255) String title, @Size(max = 10000) String content) {
 }
