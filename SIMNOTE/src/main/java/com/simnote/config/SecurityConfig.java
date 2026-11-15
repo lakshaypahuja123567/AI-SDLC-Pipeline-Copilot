@@ -6,10 +6,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import javax.sql.DataSource;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.simnote.dto.ApiErrorResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -36,7 +40,8 @@ public class SecurityConfig {
     private String rememberMeKey;
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, PersistentTokenBasedRememberMeServices rememberMe) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, PersistentTokenBasedRememberMeServices rememberMe,
+                                            ObjectMapper objectMapper) throws Exception {
         CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
         csrfHandler.setCsrfRequestAttributeName(null);
 
@@ -51,7 +56,9 @@ public class SecurityConfig {
                 .anyRequest().authenticated())
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, exception) ->
-                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)))
+                        writeError(request, response, objectMapper, HttpStatus.UNAUTHORIZED, "Authentication required"))
+                .accessDeniedHandler((request, response, exception) ->
+                        writeError(request, response, objectMapper, HttpStatus.FORBIDDEN, "Access denied")))
             .rememberMe(remember -> remember.rememberMeServices(rememberMe))
             .logout(logout -> logout
                 .logoutUrl("/api/auth/logout")
@@ -85,6 +92,14 @@ public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    private static void writeError(HttpServletRequest request, HttpServletResponse response,
+                                   ObjectMapper objectMapper, HttpStatus status, String message) throws IOException {
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        objectMapper.writeValue(response.getOutputStream(),
+                ApiErrorResponse.of(status, message, request.getRequestURI()));
     }
 
     private static OncePerRequestFilter csrfCookieFilter() {
