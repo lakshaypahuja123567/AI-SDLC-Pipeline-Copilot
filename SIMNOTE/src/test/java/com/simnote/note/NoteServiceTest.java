@@ -68,6 +68,19 @@ class NoteServiceTest {
     }
 
     @Test
+    void createAssignsSessionUserToNote() {
+        when(notes.save(any(Note.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.create("alice", new NoteRequest("title", "body"));
+
+        ArgumentCaptor<Note> saved = ArgumentCaptor.forClass(Note.class);
+        verify(notes).save(saved.capture());
+        AppUser owner = (AppUser) ReflectionTestUtils.getField(saved.getValue(), "user");
+        assertThat(owner).isSameAs(sessionUser);
+        assertThat(owner.getId()).isEqualTo(SESSION_USER_ID);
+    }
+
+    @Test
     void getQueriesByNoteIdAndSessionUserId() {
         Note owned = note(sessionUser, "mine", Instant.now());
         when(notes.findByIdAndUserId(5L, SESSION_USER_ID)).thenReturn(Optional.of(owned));
