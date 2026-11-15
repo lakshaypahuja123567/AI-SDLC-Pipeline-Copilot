@@ -10,9 +10,18 @@ function message(text) {
     $('message').textContent = text;
 }
 
+function reportError(action, result) {
+    // A 401 already returns the user to the login view; do not overwrite that state.
+    if (result.status !== 401) {
+        message(`Could not ${action} (${result.status}).`);
+    }
+}
+
 function showAuth() {
     $('auth').hidden = false;
     $('app').hidden = true;
+    $('notes').replaceChildren();
+    resetNoteForm();
 }
 
 function showApp(username) {
@@ -30,12 +39,14 @@ async function login() {
         return;
     }
     message('');
+    $('password').value = '';
     showApp(result.data.username);
 }
 
 async function logout() {
     await api('POST', '/api/auth/logout');
-    resetNoteForm();
+    $('password').value = '';
+    message('');
     showAuth();
 }
 
@@ -43,7 +54,11 @@ async function loadNotes() {
     const result = await api('GET', '/api/notes');
     const list = $('notes');
     list.replaceChildren();
-    (result.data || []).forEach((note) => {
+    if (!result.ok) {
+        reportError('load notes', result);
+        return;
+    }
+    result.data.forEach((note) => {
         const item = document.createElement('li');
         const title = document.createElement('strong');
         title.textContent = note.title;
@@ -81,7 +96,7 @@ async function saveNote(event) {
         ? await api('PUT', `/api/notes/${id}`, body)
         : await api('POST', '/api/notes', body);
     if (!result.ok) {
-        message(`Could not save note (${result.status}).`);
+        reportError('save note', result);
         return;
     }
     resetNoteForm();
@@ -91,7 +106,7 @@ async function saveNote(event) {
 async function deleteNote(id) {
     const result = await api('DELETE', `/api/notes/${id}`);
     if (!result.ok) {
-        message(`Could not delete note (${result.status}).`);
+        reportError('delete note', result);
         return;
     }
     loadNotes();
@@ -105,11 +120,24 @@ $('logoutBtn').addEventListener('click', logout);
 $('noteForm').addEventListener('submit', saveNote);
 $('cancelEdit').addEventListener('click', resetNoteForm);
 
-// First request also makes the server issue the XSRF-TOKEN cookie.
-api('GET', '/api/auth/me').then((result) => {
+document.addEventListener('simnote:unauthorized', () => {
+    if (!$('app').hidden) {
+        message('Your session has ended. Please log in again.');
+    }
+    showAuth();
+});
+
+async function checkSession() {
+    const result = await api('GET', '/api/auth/me');
     if (result.ok) {
-        showApp(result.data.username);
-    } else {
+        if ($('app').hidden) {
+            showApp(result.data.username);
+        }
+    } else if (result.status === 401 || $('app').hidden) {
         showAuth();
     }
-});
+}
+
+// The first request also makes the server issue the XSRF-TOKEN cookie.
+checkSession();
+window.addEventListener('focus', checkSession);

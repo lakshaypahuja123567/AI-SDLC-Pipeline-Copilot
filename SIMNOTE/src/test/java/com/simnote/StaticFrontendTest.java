@@ -5,11 +5,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest(properties = {
@@ -49,5 +51,24 @@ class StaticFrontendTest {
         mvc.perform(get("/styles.css")).andExpect(status().isOk());
         mvc.perform(get("/api.js")).andExpect(status().isOk());
         mvc.perform(get("/app.js")).andExpect(status().isOk());
+    }
+
+    @Test
+    void appJsRendersUserDataWithoutHtmlInjection() throws Exception {
+        String js = appJs();
+
+        assertThat(js).doesNotContain("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write");
+    }
+
+    @Test
+    void appJsWiresSessionCheckFocusAndUnauthorizedEvent() throws Exception {
+        String js = appJs();
+
+        assertThat(js).contains("'/api/auth/me'", "'focus'", "'simnote:unauthorized'");
+        assertThat(js).doesNotContain("import ", "export ");
+    }
+
+    private static String appJs() throws Exception {
+        return new ClassPathResource("static/app.js").getContentAsString(StandardCharsets.UTF_8);
     }
 }
