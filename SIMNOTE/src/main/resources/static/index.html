@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SimpleNote</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="theme.js"></script>
+</head>
+<body>
+<header class="site-header">
+    <span class="brand">SimpleNote</span>
+    <button type="button" id="themeToggle">Dark theme</button>
+</header>
+<main>
+    <p id="message" role="status"></p>
+
+    <section id="auth">
+        <form id="authForm">
+            <label>Username <input id="username" required minlength="3" maxlength="32" autocomplete="username"></label>
+            <label>Password <input id="password" type="password" required minlength="8" maxlength="72" autocomplete="current-password"></label>
+            <div class="actions">
+                <button type="submit">Log in</button>
+                <a href="register.html">Create account</a>
+            </div>
+        </form>
+    </section>
+
+    <section id="app" hidden>
+        <header class="user-bar">
+            <span>Signed in as <strong id="user"></strong></span>
+            <button type="button" id="logoutBtn">Log out</button>
+        </header>
+        <form id="noteForm">
+            <input type="hidden" id="noteId">
+            <label>Title <input id="title" required maxlength="255"></label>
+            <label>Content <textarea id="content" maxlength="10000"></textarea></label>
+            <div class="actions">
+                <button type="submit">Save note</button>
+                <button type="button" id="cancelEdit">Cancel</button>
+            </div>
+        </form>
+        <ul id="notes"></ul>
+    </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
