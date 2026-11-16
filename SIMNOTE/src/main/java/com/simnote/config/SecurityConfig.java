@@ -8,7 +8,7 @@ import java.io.IOException;
 import javax.sql.DataSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simnote.dto.ApiErrorResponse;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -32,12 +32,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Configuration
 @EnableWebSecurity
+@EnableConfigurationProperties(RememberMeProperties.class)
 public class SecurityConfig {
 
     private static final int REMEMBER_ME_VALIDITY_SECONDS = 7 * 24 * 60 * 60;
-
-    @Value("${simplenote.remember-me.key:}")
-    private String rememberMeKey;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, PersistentTokenBasedRememberMeServices rememberMe,
@@ -71,14 +69,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    PersistentTokenBasedRememberMeServices rememberMeServices(UserDetailsService userDetailsService, DataSource dataSource) {
-        if (rememberMeKey == null || rememberMeKey.length() < 32) {
-            throw new IllegalStateException("SIMPLENOTE_REMEMBER_ME_KEY must be set to at least 32 characters");
-        }
+    PersistentTokenBasedRememberMeServices rememberMeServices(UserDetailsService userDetailsService, DataSource dataSource,
+                                                              RememberMeProperties properties) {
         JdbcTokenRepositoryImpl tokens = new JdbcTokenRepositoryImpl();
         tokens.setDataSource(dataSource);
         PersistentTokenBasedRememberMeServices services =
-                new PersistentTokenBasedRememberMeServices(rememberMeKey, userDetailsService, tokens);
+                new PersistentTokenBasedRememberMeServices(properties.key(), userDetailsService, tokens);
         services.setTokenValiditySeconds(REMEMBER_ME_VALIDITY_SECONDS);
         services.setAlwaysRemember(true);
         return services;
