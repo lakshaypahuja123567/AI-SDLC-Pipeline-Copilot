@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SimpleNote - Create account</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="theme.js"></script>
+</head>
+<body>
+<header class="site-header">
+    <span class="brand">SimpleNote</span>
+    <button type="button" id="themeToggle">Dark theme</button>
+</header>
+<main>
+    <h1>Create account</h1>
+    <p id="message" role="status"></p>
+
+    <section>
+        <form id="registerForm">
+            <label>Username <input id="username" required minlength="3" maxlength="32" autocomplete="username"></label>
+            <label>Password <input id="password" type="password" required minlength="8" maxlength="72" autocomplete="new-password"></label>
+            <label>Confirm password <input id="confirmPassword" type="password" required minlength="8" maxlength="72" autocomplete="new-password"></label>
+            <div class="actions">
+                <button type="submit">Create account</button>
+                <a href="/">Back to log in</a>
+            </div>
+        </form>
+    </section>
+</main>
+<script src="register.js"></script>
+</body>
+</html>
