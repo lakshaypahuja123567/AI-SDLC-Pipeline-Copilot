@@ -14,6 +14,7 @@ import com.simnote.dto.NoteRequest;
 import com.simnote.dto.NoteResponse;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,7 @@ class NoteServiceTest {
 
     private static final Long SESSION_USER_ID = 1L;
     private static final Long OTHER_USER_ID = 2L;
+    private static final Instant NOW = Instant.parse("2026-03-01T10:00:00Z");
 
     private NoteRepository notes;
     private AppUserRepository users;
@@ -37,7 +39,7 @@ class NoteServiceTest {
     void setUp() {
         notes = mock(NoteRepository.class);
         users = mock(AppUserRepository.class);
-        service = new NoteService(notes, users, Clock.systemUTC());
+        service = new NoteService(notes, users, Clock.fixed(NOW, ZoneOffset.UTC));
         sessionUser = new AppUser("alice", "hash");
         ReflectionTestUtils.setField(sessionUser, "id", SESSION_USER_ID);
         when(users.findByUsername("alice")).thenReturn(Optional.of(sessionUser));
@@ -88,6 +90,50 @@ class NoteServiceTest {
         ArgumentCaptor<Note> saved = ArgumentCaptor.forClass(Note.class);
         verify(notes).save(saved.capture());
         assertThat(saved.getValue().getTitle()).isEqualTo("padded");
+    }
+
+    @Test
+    void createStoresPaddedTitleAt255CharacterBoundary() {
+        when(notes.save(any(Note.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        String title = "a".repeat(255);
+
+        NoteResponse result = service.create("alice", new NoteRequest("  " + title + "  ", "body"));
+
+        assertThat(result.title()).isEqualTo(title);
+    }
+
+    @Test
+    void createSetsCreatedAndUpdatedAtFromClock() {
+        when(notes.save(any(Note.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        NoteResponse result = service.create("alice", new NoteRequest("title", "body"));
+
+        assertThat(result.createdAt()).isEqualTo(NOW);
+        assertThat(result.updatedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void updateStoresTrimmedTitle() {
+        Note owned = note(sessionUser, "old", Instant.parse("2026-01-01T00:00:00Z"));
+        when(notes.findByIdAndUserId(5L, SESSION_USER_ID)).thenReturn(Optional.of(owned));
+        when(notes.save(any(Note.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        NoteResponse result = service.update("alice", 5L, new NoteRequest("\u2003  padded  \u2003", "body"));
+
+        assertThat(result.title()).isEqualTo("padded");
+    }
+
+    @Test
+    void updateSetsUpdatedAtFromClockAndKeepsCreatedAt() {
+        Instant created = Instant.parse("2026-01-01T00:00:00Z");
+        Note owned = note(sessionUser, "old", created);
+        when(notes.findByIdAndUserId(5L, SESSION_USER_ID)).thenReturn(Optional.of(owned));
+        when(notes.save(any(Note.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        NoteResponse result = service.update("alice", 5L, new NoteRequest("new", "body"));
+
+        assertThat(result.createdAt()).isEqualTo(created);
+        assertThat(result.updatedAt()).isEqualTo(NOW);
     }
 
     @Test

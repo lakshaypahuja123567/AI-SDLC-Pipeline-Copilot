@@ -24,7 +24,7 @@ class XsrfCookieTest {
 
         List<String> cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
         assertThat(cookies).anySatisfy(cookie -> assertThat(cookie)
-                .startsWith("XSRF-TOKEN=")
+                .matches("XSRF-TOKEN=[^;]+;.*")
                 .contains("SameSite=Lax")
                 .doesNotContain("HttpOnly"));
     }
