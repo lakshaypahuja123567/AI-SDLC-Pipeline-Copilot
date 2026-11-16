@@ -1,6 +1,76 @@
 # Code Review: SIMNOTE (SimpleNote)
 
-## Iteration 5 (current)
+## Iteration 6 (current)
+
+Labeling note: the requested label was "iteration 4", but this file already contains an "Iteration 4" section (T-01 to T-15 review). This section is labeled iteration 6 to keep the history unambiguous.
+
+**Overall status:** Approved
+
+**Review scope:**
+
+- Change set reviewed: commits `20d6e5a` (CR-002), `33df944` (CR-003 and CR-001 test), `8b038c9` (I-1 strip fix and Unicode test), `ff2cc2c` (CR-004), `e1ff86c` (XSRF cookie test), and `3a700ff` (I-2, I-3, I-4 tests) on `feature/task-15-readme`, range `fbf805a..3a700ff`. Committed SIMNOTE changes in range: 6 files, 114 insertions, 16 deletions. Files: [NoteService.java](SIMNOTE/src/main/java/com/simnote/note/NoteService.java), [AppUser.java](SIMNOTE/src/main/java/com/simnote/auth/AppUser.java), [SecurityConfig.java](SIMNOTE/src/main/java/com/simnote/config/SecurityConfig.java), [NoteServiceTest.java](SIMNOTE/src/test/java/com/simnote/note/NoteServiceTest.java), [ApiWebMvcTest.java](SIMNOTE/src/test/java/com/simnote/config/ApiWebMvcTest.java), [XsrfCookieTest.java](SIMNOTE/src/test/java/com/simnote/config/XsrfCookieTest.java).
+- Context read: [TrimmedSize.java](SIMNOTE/src/main/java/com/simnote/dto/TrimmedSize.java), [NoteRequest.java](SIMNOTE/src/main/java/com/simnote/dto/NoteRequest.java), [RegisterRequest.java](SIMNOTE/src/main/java/com/simnote/dto/RegisterRequest.java), [AuthService.java](SIMNOTE/src/main/java/com/simnote/auth/AuthService.java), [UsernameNormalizer.java](SIMNOTE/src/main/java/com/simnote/service/UsernameNormalizer.java), [AppConfig.java](SIMNOTE/src/main/java/com/simnote/config/AppConfig.java), [SameSiteCookieFilter.java](SIMNOTE/src/main/java/com/simnote/config/SameSiteCookieFilter.java), `docs/architecture.md`.
+- Source documents and approval state:
+  - Requirements: iteration 8, owner-approved (Lakshay Pahuja). Q-E11 items approved 2026-11-16.
+  - Architecture: iteration 6, approver Lakshay Pahuja, 2026-11-16.
+  - Design review: owner-approved 2026-11-16.
+  - Implementation plan: approved (iteration 1, 2026-11-15).
+  - All four are present and the approval state is consistent with the owner's statement. Approval block is cleared.
+- Working tree (not part of the change set, not reviewed, not modified): `.github/sdlc/approvals.json` shows the three approval flags as `true` while the committed version has them `false`. `.vscode/mcp.json` is modified and `.github/sdlc/verification-report.md` is untracked. None of these are staged or committed by this review.
+- Test evidence: surefire XML in `SIMNOTE/target/surefire-reports` shows 18 suites, 95 tests, 0 failures, 0 errors, 0 skipped. This does not match the owner-reported count of 91; the XML count is used here. Tests were not re-run by this agent.
+
+**Prior finding status:**
+
+| ID | Status | Evidence |
+|---|---|---|
+| CR-001 | Resolved | `create()` and `update()` use `strip()` ([NoteService.java](SIMNOTE/src/main/java/com/simnote/note/NoteService.java#L36), [NoteService.java](SIMNOTE/src/main/java/com/simnote/note/NoteService.java#L48)), matching the validator ([TrimmedSize.java](SIMNOTE/src/main/java/com/simnote/dto/TrimmedSize.java#L46)). Covered by [NoteServiceTest.java](SIMNOTE/src/test/java/com/simnote/note/NoteServiceTest.java#L74) and [NoteServiceTest.java](SIMNOTE/src/test/java/com/simnote/note/NoteServiceTest.java#L116). |
+| CR-002 | Resolved | No `@Value` or manual key check in [SecurityConfig.java](SIMNOTE/src/main/java/com/simnote/config/SecurityConfig.java). Key is validated once by `RememberMeProperties` (`@NotBlank @Size(min = 32)`). |
+| CR-003 | Resolved | [NoteService.java](SIMNOTE/src/main/java/com/simnote/note/NoteService.java#L19) injects `Clock`; `clock.instant()` at lines 36 and 48. Bean in [AppConfig.java](SIMNOTE/src/main/java/com/simnote/config/AppConfig.java#L13). Deterministic timestamps tested at [NoteServiceTest.java](SIMNOTE/src/test/java/com/simnote/note/NoteServiceTest.java#L42), [NoteServiceTest.java](SIMNOTE/src/test/java/com/simnote/note/NoteServiceTest.java#L106), and [NoteServiceTest.java](SIMNOTE/src/test/java/com/simnote/note/NoteServiceTest.java#L127). |
+| CR-004 | Resolved | [AppUser.java](SIMNOTE/src/main/java/com/simnote/auth/AppUser.java#L22) `usernameNormalized` length 255, matching `docs/architecture.md` (`username_normalized VARCHAR(255)`). |
+| XSRF cookie gap | Resolved | [XsrfCookieTest.java](SIMNOTE/src/test/java/com/simnote/config/XsrfCookieTest.java#L27) asserts the value is non-empty (`XSRF-TOKEN=[^;]+;.*`), `SameSite=Lax`, and no `HttpOnly`. |
+| I-1 | Resolved | Storage and validator both use `strip()`. Covered by [NoteServiceTest.java](SIMNOTE/src/test/java/com/simnote/note/NoteServiceTest.java#L85) (`createStripsUnicodeWhitespaceFromTitle`). |
+| I-2 | Resolved for update trim; residual Low | Update trim covered by [NoteServiceTest.java](SIMNOTE/src/test/java/com/simnote/note/NoteServiceTest.java#L116). The padded 255-character boundary is tested on the create path only ([NoteServiceTest.java](SIMNOTE/src/test/java/com/simnote/note/NoteServiceTest.java#L96)). The update path shares the same validator and `strip()` call, so the residual is a test gap, not a defect. |
+| I-3 | Resolved | Fixed clock `Clock.fixed(NOW, ZoneOffset.UTC)` at [NoteServiceTest.java](SIMNOTE/src/test/java/com/simnote/note/NoteServiceTest.java#L42). `createdAt` and `updatedAt` asserted at lines 106 and 127. |
+| I-4 | Resolved | [XsrfCookieTest.java](SIMNOTE/src/test/java/com/simnote/config/XsrfCookieTest.java#L27) requires a non-empty token value. |
+
+**Findings:**
+
+Critical: none.
+
+High: none.
+
+Medium: none.
+
+Low:
+
+| ID | File and line | Issue and impact | Recommended fix |
+|---|---|---|---|
+| N-L1 | [AppConfig.java](SIMNOTE/src/main/java/com/simnote/config/AppConfig.java#L9) and [SecurityConfig.java](SIMNOTE/src/main/java/com/simnote/config/SecurityConfig.java#L35) | `@EnableConfigurationProperties(RememberMeProperties.class)` is declared on both classes. Spring registers the bean once, so there is no runtime defect. Impact: a second registration point that can drift if one is removed. | Keep one declaration (for example in `AppConfig`) and remove the other. |
+| N-L2 | [AppUser.java](SIMNOTE/src/main/java/com/simnote/auth/AppUser.java#L33) and [UsernameNormalizer.java](SIMNOTE/src/main/java/com/simnote/service/UsernameNormalizer.java#L15) | Username normalization is implemented twice with different whitespace methods: `trim()` in `AppUser` and `strip()` in `UsernameNormalizer`. Current behavior is identical because `RegisterRequest` only permits ASCII whitespace (`\s`) and `AuthService` passes the already-normalized value. Impact: future changes to one path could make stored and looked-up usernames diverge. | Have `AppUser` accept the normalized value without re-normalizing, or call `UsernameNormalizer.normalize` in one place only. |
+
+**Scope observation (not flagged):** Code for FR-003 (logout), FR-008, FR-009 (delete), and FR-012 is present. Per the owner decision of 2026-11-16, these are out of scope and are not flagged as scope creep.
+
+**Missing test coverage and verification gaps:**
+
+- The padded 255-character boundary is not tested on the update path (I-2 residual).
+- No test asserts the `AppConfig` `Clock` bean type or default zone.
+- Cookie headers were verified by the `XsrfCookieTest` unit-level assertion only, not by runtime request inspection.
+- Not executed by this agent: `mvn test`, coverage, and runtime cookie headers. Results above are from surefire XML artifacts and are not re-verified.
+
+**Dependency/security concerns:**
+
+- No dependency manifest changed in the reviewed range (`pom.xml` is not in the stat). No dependency advisory check was run by this agent. Advisory verification is incomplete.
+- Remember-me key: single validation path through `RememberMeProperties`. Startup failure for blank and short keys is covered by `AppConfigTest`. The placeholder in `application.properties` is accepted risk R-7 and is not a new finding.
+- Login logs only the normalized username on failure, not the password.
+
+**Recommended actions:**
+
+1. Reconcile the test count in the PR description: surefire XML shows 95 tests, while the owner-reported count is 91.
+2. Confirm that `.github/sdlc/approvals.json` and the other working-tree changes are excluded from the PR. Do not stage them as part of this change set.
+3. Optional Low fixes: N-L1, N-L2, I-2 residual (update-path 255 boundary test).
+4. Run a dependency advisory check and `mvn test` through the testing agent before PR creation. Neither was executed here.
+
+## Iteration 5 (superseded by iteration 6)
 
 **Overall status:** Changes Required
 
