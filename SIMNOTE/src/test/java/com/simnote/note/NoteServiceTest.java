@@ -12,6 +12,7 @@ import com.simnote.auth.AppUser;
 import com.simnote.auth.AppUserRepository;
 import com.simnote.dto.NoteRequest;
 import com.simnote.dto.NoteResponse;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +37,7 @@ class NoteServiceTest {
     void setUp() {
         notes = mock(NoteRepository.class);
         users = mock(AppUserRepository.class);
-        service = new NoteService(notes, users);
+        service = new NoteService(notes, users, Clock.systemUTC());
         sessionUser = new AppUser("alice", "hash");
         ReflectionTestUtils.setField(sessionUser, "id", SESSION_USER_ID);
         when(users.findByUsername("alice")).thenReturn(Optional.of(sessionUser));
@@ -65,6 +66,17 @@ class NoteServiceTest {
         assertThat(saved.getValue().getTitle()).isEqualTo("title");
         assertThat(saved.getValue().getContent()).isEqualTo("body");
         assertThat(result.title()).isEqualTo("title");
+    }
+
+    @Test
+    void createStoresTrimmedTitle() {
+        when(notes.save(any(Note.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.create("alice", new NoteRequest("  padded  ", "body"));
+
+        ArgumentCaptor<Note> saved = ArgumentCaptor.forClass(Note.class);
+        verify(notes).save(saved.capture());
+        assertThat(saved.getValue().getTitle()).isEqualTo("padded");
     }
 
     @Test

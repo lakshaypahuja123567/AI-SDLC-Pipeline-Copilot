@@ -4,7 +4,7 @@ import com.simnote.auth.AppUser;
 import com.simnote.auth.AppUserRepository;
 import com.simnote.dto.NoteRequest;
 import com.simnote.dto.NoteResponse;
-import java.time.Instant;
+import java.time.Clock;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,10 +16,12 @@ public class NoteService {
 
     private final NoteRepository notes;
     private final AppUserRepository users;
+    private final Clock clock;
 
-    public NoteService(NoteRepository notes, AppUserRepository users) {
+    public NoteService(NoteRepository notes, AppUserRepository users, Clock clock) {
         this.notes = notes;
         this.users = users;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -31,7 +33,7 @@ public class NoteService {
 
     @Transactional
     public NoteResponse create(String username, NoteRequest request) {
-        Note note = new Note(currentUser(username), request.title().trim(), request.content(), Instant.now());
+        Note note = new Note(currentUser(username), request.title().trim(), request.content(), clock.instant());
         return toResponse(notes.save(note));
     }
 
@@ -43,7 +45,7 @@ public class NoteService {
     @Transactional
     public NoteResponse update(String username, Long id, NoteRequest request) {
         Note note = findOwned(username, id);
-        note.update(request.title().trim(), request.content(), Instant.now());
+        note.update(request.title().trim(), request.content(), clock.instant());
         return toResponse(notes.save(note));
     }
 
