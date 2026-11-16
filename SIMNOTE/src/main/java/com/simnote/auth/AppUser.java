@@ -19,7 +19,7 @@ public class AppUser {
     @Column(nullable = false, unique = true, length = 32)
     private String username;
 
-    @Column(name = "username_normalized", nullable = false, unique = true, length = 32)
+    @Column(name = "username_normalized", nullable = false, unique = true, length = 255)
     private String usernameNormalized;
 
     @Column(name = "password_hash", nullable = false, length = 100)
