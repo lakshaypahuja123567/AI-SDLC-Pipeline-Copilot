@@ -33,7 +33,7 @@ public class NoteService {
 
     @Transactional
     public NoteResponse create(String username, NoteRequest request) {
-        Note note = new Note(currentUser(username), request.title().trim(), request.content(), clock.instant());
+        Note note = new Note(currentUser(username), request.title().strip(), request.content(), clock.instant());
         return toResponse(notes.save(note));
     }
 
@@ -45,7 +45,7 @@ public class NoteService {
     @Transactional
     public NoteResponse update(String username, Long id, NoteRequest request) {
         Note note = findOwned(username, id);
-        note.update(request.title().trim(), request.content(), clock.instant());
+        note.update(request.title().strip(), request.content(), clock.instant());
         return toResponse(notes.save(note));
     }
 

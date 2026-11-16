@@ -80,6 +80,17 @@ class NoteServiceTest {
     }
 
     @Test
+    void createStripsUnicodeWhitespaceFromTitle() {
+        when(notes.save(any(Note.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.create("alice", new NoteRequest("\u2003padded\u2003", "body"));
+
+        ArgumentCaptor<Note> saved = ArgumentCaptor.forClass(Note.class);
+        verify(notes).save(saved.capture());
+        assertThat(saved.getValue().getTitle()).isEqualTo("padded");
+    }
+
+    @Test
     void createAssignsSessionUserToNote() {
         when(notes.save(any(Note.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
